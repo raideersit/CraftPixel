@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mejorador de Imágenes</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f7f7f8;
+    --panel: #ffffff;
+    --border: #d9d9de;
+    --text: #1a1a1e;
+    --muted: #6b6b74;
+    --accent: #3a6df0;
+    --accent-dim: #eaf0ff;
+    --error: #c0392b;
+    --error-bg: #fdecea;
+    --ok: #1f8a4c;
+    --ok-bg: #eafaf0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17181c;
+      --panel: #202127;
+      --border: #34353c;
+      --text: #ececef;
+      --muted: #97979f;
+      --accent: #6d93ff;
+      --accent-dim: #23293f;
+      --error: #ff8a80;
+      --error-bg: #3a2020;
+      --ok: #6fe0a1;
+      --ok-bg: #17301f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 32px 16px 64px;
+  }
+  main { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); margin-top: 0; margin-bottom: 24px; font-size: 0.9rem; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .levels { display: flex; gap: 8px; margin-bottom: 16px; }
+  .level-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+  .level-btn.active {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    font-weight: 600;
+  }
+
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 48px 16px;
+    text-align: center;
+    color: var(--muted);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .dropzone.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .dropzone strong { color: var(--text); }
+  .dropzone input { display: none; }
+
+  .job {
+    display: none;
+  }
+  .job.visible { display: block; }
+
+  .sizes {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+  }
+  .sizes .arrow { color: var(--muted); }
+  .sizes .out { color: var(--accent); font-weight: 600; }
+
+  .stage {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .bar-track {
+    height: 6px;
+    border-radius: 4px;
+    background: var(--accent-dim);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .bar-fill {
+    height: 100%;
+    width: 40%;
+    background: var(--accent);
+    border-radius: 4px;
+    animation: slide 1.1s ease-in-out infinite;
+  }
+  .bar-fill.done { animation: none; width: 100%; }
+  @keyframes slide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(250%); }
+  }
+
+  .result-images {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .result-images figure { flex: 1; margin: 0; }
+  .result-images img { width: 100%; border-radius: 8px; display: block; border: 1px solid var(--border); }
+  .result-images figcaption { font-size: 0.8rem; color: var(--muted); margin-top: 6px; text-align: center; }
+
+  .download-btn, .retry-btn {
+    display: inline-block;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .retry-btn { background: transparent; border: 1px solid var(--border); color: var(--text); margin-left: 8px; }
+
+  .error-box {
+    background: var(--error-bg);
+    color: var(--error);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+  }
+  .error-box .action { display: block; margin-top: 4px; color: var(--text); font-size: 0.85rem; }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .tab-btn {
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.9rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+  .gallery-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
+  .bulk-bar { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--muted); }
+  .bulk-bar[hidden] { display: none; }
+  .download-btn.danger { background: var(--error); }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+  }
+  .card-select {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 18px;
+    height: 18px;
+    z-index: 2;
+  }
+  .card-thumb {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: var(--accent-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-align: center;
+    overflow: hidden;
+  }
+  .card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card-body { padding: 10px 12px; font-size: 0.8rem; }
+  .card-body .dims { color: var(--text); margin-bottom: 2px; }
+  .card-body .dims .arrow { color: var(--muted); margin: 0 4px; }
+  .card-body .meta { display: flex; align-items: center; justify-content: space-between; color: var(--muted); margin-top: 6px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .badge.status-error { background: var(--error-bg); color: var(--error); }
+  .badge.status-processing, .badge.status-queued { background: var(--accent-dim); color: var(--muted); }
+
+  .card-menu { position: relative; }
+  .card-menu summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 1rem;
+  }
+  .card-menu summary::-webkit-details-marker { display: none; }
+  .card-menu[open] summary { background: var(--accent-dim); }
+  .card-menu .menu-list {
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    z-index: 5;
+  }
+  .card-menu .menu-list button {
+    background: none;
+    border: none;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .card-menu .menu-list button:hover { background: var(--accent-dim); }
+  .card-menu .menu-list button.danger { color: var(--error); }
+  .card-menu .menu-list button:disabled { color: var(--muted); cursor: not-allowed; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Mejorador de Imágenes</h1>
+  <p class="subtitle">Sube una imagen, elige el nivel y espera — todo corre en tu PC.</p>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-view="upload" type="button">Subir</button>
+    <button class="tab-btn" data-view="gallery" type="button">Galería</button>
+  </nav>
+
+  <div id="view-upload">
+    <section class="panel" id="upload-panel">
+      <div class="levels" id="levels">
+        <button class="level-btn" data-mp="2">2 MP</button>
+        <button class="level-btn" data-mp="4">4 MP</button>
+        <button class="level-btn" data-mp="8">8 MP</button>
+      </div>
+
+      <label class="dropzone" id="dropzone" for="file-input">
+        <div id="dropzone-text">
+          Arrastra una imagen aquí, o <strong>haz clic para elegir un archivo</strong>
+          <br><span style="font-size:0.8rem">JPG, PNG o WebP — hasta 50 MB</span>
+        </div>
+        <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.webp">
+      </label>
+
+      <div id="client-error"></div>
+    </section>
+
+    <section class="panel job" id="job-panel">
+      <div class="sizes" id="sizes"></div>
+      <div class="stage" id="stage-text"></div>
+      <div class="bar-track"><div class="bar-fill" id="bar"></div></div>
+
+      <div id="job-error"></div>
+      <div id="job-result"></div>
+    </section>
+  </div>
+
+  <div id="view-gallery" hidden>
+    <div class="gallery-toolbar">
+      <button id="refresh-gallery" class="retry-btn" type="button">Actualizar</button>
+      <div id="bulk-bar" class="bulk-bar" hidden>
+        <span id="bulk-count"></span>
+        <button id="bulk-delete" class="download-btn danger" type="button">Borrar seleccionadas</button>
+      </div>
+    </div>
+    <div id="gallery-grid" class="gallery-grid"></div>
+    <p id="gallery-empty" class="subtitle" hidden>Todavía no procesaste ninguna imagen.</p>
+  </div>
+</main>
+
+<script>
+const API_BASE = "http://127.0.0.1:8000";
+const MAX_BYTES = 50 * 1024 * 1024;
+const ALLOWED_EXT = [".jpg", ".jpeg", ".png", ".webp"];
+
+// La salida del pipeline siempre es PNG (ver backend/worker.py), sin
+// importar la extensión del archivo original subido.
+function downloadFilename(originalFilename) {
+  const stem = originalFilename.replace(/\.[^./]+$/, "");
+  return `mejorada_${stem}.png`;
+}
+
+let selectedMp = 2;
+let pollTimer = null;
+
+const levelsEl = document.getElementById("levels");
+const dropzone = document.getElementById("dropzone");
+const fileInput = document.getElementById("file-input");
+const clientErrorEl = document.getElementById("client-error");
+const jobPanel = document.getElementById("job-panel");
+const sizesEl = document.getElementById("sizes");
+const stageTextEl = document.getElementById("stage-text");
+const barEl = document.getElementById("bar");
+const jobErrorEl = document.getElementById("job-error");
+const jobResultEl = document.getElementById("job-result");
+
+levelsEl.querySelectorAll(".level-btn").forEach((btn) => {
+  if (Number(btn.dataset.mp) === selectedMp) btn.classList.add("active");
+  btn.addEventListener("click", () => {
+    selectedMp = Number(btn.dataset.mp);
+    levelsEl.querySelectorAll(".level-btn").forEach((b) => b.classList.toggle("active", b === btn));
+  });
+});
+
+["dragenter", "dragover"].forEach((evt) =>
+  dropzone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dropzone.classList.add("drag-over");
+  })
+);
+["dragleave", "drop"].forEach((evt) =>
+  dropzone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("drag-over");
+  })
+);
+dropzone.addEventListener("drop", (e) => {
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+fileInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) handleFile(file);
+});
+
+function showClientError(message, action) {
+  clientErrorEl.innerHTML = `<div class="error-box">${message}${action ? `<span class="action">${action}</span>` : ""}</div>`;
+}
+function clearClientError() {
+  clientErrorEl.innerHTML = "";
+}
+
+function validateClientSide(file) {
+  const ext = "." + file.name.split(".").pop().toLowerCase();
+  if (!ALLOWED_EXT.includes(ext)) {
+    return `Formato no soportado (${ext}). Usa JPG, PNG o WebP.`;
+  }
+  if (file.size > MAX_BYTES) {
+    const mb = (file.size / (1024 * 1024)).toFixed(1);
+    return `El archivo pesa ${mb} MB, el límite es 50 MB. Comprímelo o elige otra imagen.`;
+  }
+  return null;
+}
+
+async function handleFile(file) {
+  clearClientError();
+  const clientError = validateClientSide(file);
+  if (clientError) {
+    showClientError(clientError, "Elige otro archivo para continuar.");
+    return;
+  }
+
+  jobPanel.classList.add("visible");
+  jobErrorEl.innerHTML = "";
+  jobResultEl.innerHTML = "";
+  barEl.classList.remove("done");
+  sizesEl.textContent = "Calculando tamaño de salida...";
+  stageTextEl.textContent = "";
+
+  const form = new FormData();
+  form.append("file", file);
+  form.append("budget_mp", String(selectedMp));
+
+  let job;
+  try {
+    const res = await fetch(`${API_BASE}/api/jobs`, { method: "POST", body: form });
+    const body = await res.json();
+    if (!res.ok) {
+      showJobError(body.detail || "Error al subir el archivo.", "Verifica el archivo e intenta de nuevo.");
+      return;
+    }
+    job = body;
+  } catch (err) {
+    showJobError(
+      "No se pudo conectar con el backend.",
+      `¿Está corriendo? python -m uvicorn main:app --app-dir backend --port 8000`
+    );
+    return;
+  }
+
+  renderSizes(job);
+  stageTextEl.textContent = job.stage;
+  pollJob(job.id);
+}
+
+function renderSizes(job) {
+  sizesEl.innerHTML =
+    `Entrada: ${job.source_width}x${job.source_height} px` +
+    `<span class="arrow">→</span>` +
+    `<span class="out">Salida: ${job.target_width}x${job.target_height} px</span>` +
+    ` (nivel ${(job.budget_px / 1_000_000).toFixed(0)} MP)`;
+}
+
+function showJobError(message, action) {
+  jobErrorEl.innerHTML = `<div class="error-box">${message}${action ? `<span class="action">${action}</span>` : ""}</div>`;
+  barEl.classList.add("done");
+  const retry = document.createElement("button");
+  retry.className = "retry-btn";
+  retry.textContent = "Intentar de nuevo";
+  retry.onclick = resetForm;
+  jobErrorEl.appendChild(retry);
+}
+
+function pollJob(jobId) {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    let job;
+    try {
+      const res = await fetch(`${API_BASE}/api/jobs/${jobId}`);
+      job = await res.json();
+    } catch (err) {
+      return; // red momentáneamente caída, reintenta en el próximo tick
+    }
+
+    stageTextEl.textContent = job.stage;
+
+    if (job.status === "done") {
+      clearInterval(pollTimer);
+      barEl.classList.add("done");
+      renderResult(job);
+    } else if (job.status === "error") {
+      clearInterval(pollTimer);
+      showJobError(job.error_message || "Falló el procesamiento.", "Prueba con otra imagen o revisa los logs del backend.");
+    }
+  }, 1500);
+}
+
+function renderResult(job) {
+  const downloadUrl = `${API_BASE}/api/jobs/${job.id}/download`;
+  jobResultEl.innerHTML = `
+    <div class="result-images">
+      <figure><img src="${downloadUrl}" alt="Resultado"><figcaption>${job.target_width}x${job.target_height} px</figcaption></figure>
+    </div>
+    <a class="download-btn" href="${downloadUrl}" download="${downloadFilename(job.original_filename)}">Descargar</a>
+    <button class="retry-btn" id="retry-ok">Procesar otra</button>
+  `;
+  document.getElementById("retry-ok").onclick = resetForm;
+}
+
+function resetForm() {
+  fileInput.value = "";
+  jobPanel.classList.remove("visible");
+  clearClientError();
+  jobErrorEl.innerHTML = "";
+  jobResultEl.innerHTML = "";
+  if (pollTimer) clearInterval(pollTimer);
+}
+
+// --- Pantalla 2: Galería ---
+
+const viewUpload = document.getElementById("view-upload");
+const viewGallery = document.getElementById("view-gallery");
+const galleryGrid = document.getElementById("gallery-grid");
+const galleryEmpty = document.getElementById("gallery-empty");
+const bulkBar = document.getElementById("bulk-bar");
+const bulkCount = document.getElementById("bulk-count");
+
+const selectedIds = new Set();
+const STATUS_LABELS = { queued: "En cola", processing: "Procesando", done: "Listo", error: "Error" };
+
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b === btn));
+    const view = btn.dataset.view;
+    viewUpload.hidden = view !== "upload";
+    viewGallery.hidden = view !== "gallery";
+    if (view === "gallery") loadGallery();
+  });
+});
+
+document.getElementById("refresh-gallery").addEventListener("click", loadGallery);
+document.getElementById("bulk-delete").addEventListener("click", bulkDelete);
+
+async function loadGallery() {
+  let jobs;
+  try {
+    const res = await fetch(`${API_BASE}/api/jobs`);
+    jobs = await res.json();
+  } catch (err) {
+    galleryGrid.innerHTML = `<div class="error-box">No se pudo conectar con el backend.<span class="action">¿Está corriendo en el puerto 8000?</span></div>`;
+    return;
+  }
+
+  selectedIds.clear();
+  updateBulkBar();
+
+  galleryEmpty.hidden = jobs.length > 0;
+  galleryGrid.innerHTML = "";
+  jobs.forEach((job) => galleryGrid.appendChild(buildCard(job)));
+}
+
+function buildCard(job) {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.className = "card-select";
+  checkbox.addEventListener("change", () => {
+    if (checkbox.checked) selectedIds.add(job.id);
+    else selectedIds.delete(job.id);
+    updateBulkBar();
+  });
+
+  const thumb = document.createElement("div");
+  thumb.className = "card-thumb";
+  if (job.status === "done") {
+    thumb.innerHTML = `<img src="${API_BASE}/api/jobs/${job.id}/download" alt="Miniatura">`;
+  } else {
+    thumb.textContent = job.status === "error" ? "Falló" : (job.stage || "Procesando...");
+  }
+
+  const body = document.createElement("div");
+  body.className = "card-body";
+  body.innerHTML = `
+    <div class="dims">${job.source_width}x${job.source_height}<span class="arrow">→</span>${job.target_width}x${job.target_height}</div>
+    <div class="meta">
+      <span class="badge status-${job.status}">${STATUS_LABELS[job.status] || job.status} · ${(job.budget_px / 1_000_000).toFixed(0)} MP</span>
+    </div>
+  `;
+
+  const menuWrap = document.createElement("details");
+  menuWrap.className = "card-menu";
+  const summary = document.createElement("summary");
+  summary.textContent = "⋮";
+  const menuList = document.createElement("div");
+  menuList.className = "menu-list";
+
+  const downloadBtn = document.createElement("button");
+  downloadBtn.textContent = "Descargar";
+  downloadBtn.disabled = job.status !== "done";
+  downloadBtn.onclick = () => {
+    const a = document.createElement("a");
+    a.href = `${API_BASE}/api/jobs/${job.id}/download`;
+    a.download = downloadFilename(job.original_filename);
+    a.click();
+    menuWrap.open = false;
+  };
+
+  const reuseBtn = document.createElement("button");
+  reuseBtn.textContent = "Reutilizar configuración";
+  reuseBtn.onclick = () => {
+    const mp = Math.round(job.budget_px / 1_000_000);
+    selectedMp = mp;
+    levelsEl.querySelectorAll(".level-btn").forEach((b) => b.classList.toggle("active", Number(b.dataset.mp) === mp));
+    document.querySelector('.tab-btn[data-view="upload"]').click();
+  };
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.textContent = "Borrar";
+  deleteBtn.className = "danger";
+  deleteBtn.onclick = async () => {
+    if (!confirm("¿Borrar esta imagen y su resultado? No se puede deshacer.")) return;
+    await fetch(`${API_BASE}/api/jobs/${job.id}`, { method: "DELETE" });
+    loadGallery();
+  };
+
+  menuList.append(downloadBtn, reuseBtn, deleteBtn);
+  menuWrap.append(summary, menuList);
+
+  card.append(checkbox, thumb, body, menuWrap);
+  return card;
+}
+
+function updateBulkBar() {
+  bulkBar.hidden = selectedIds.size === 0;
+  bulkCount.textContent = `${selectedIds.size} seleccionada(s)`;
+}
+
+async function bulkDelete() {
+  if (selectedIds.size === 0) return;
+  if (!confirm(`¿Borrar ${selectedIds.size} imagen(es)? No se puede deshacer.`)) return;
+  await Promise.all(
+    [...selectedIds].map((id) => fetch(`${API_BASE}/api/jobs/${id}`, { method: "DELETE" }))
+  );
+  loadGallery();
+}
+</script>
+</body>
+</html>

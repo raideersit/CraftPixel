@@ -1,0 +1,29 @@
+{
+	"nodes":[
+		{"id":"n-nota","type":"text","text":"**Regla que define el producto**\n\nLa salida se calcula por presupuesto de megapíxeles, no por factor fijo.\n\n736x416 → 1881x1063\n1200x703 → 1847x1082\n749x468 → 1789x1118\n\nLos tres ≈ 2.000.000 px","x":-1560,"y":-170,"width":400,"height":300,"color":"3"},
+		{"id":"n-pipe","type":"file","file":"02-Tecnico/Pipeline.md","x":860,"y":590,"width":440,"height":740,"color":"1"},
+		{"id":"n-flujo","type":"text","text":"**Orden de trabajo**\n\n1. Validar dimensionado\n2. Cerrar ADR-001\n3. Construir motor\n4. Construir UI","x":1300,"y":-70,"width":300,"height":220,"color":"6"},
+		{"id":"n-adr","type":"file","file":"03-Decisiones/ADR-001-eleccion-stack.md","x":720,"y":20,"width":440,"height":340,"color":"2"},
+		{"id":"n-titulo","type":"text","text":"# Mejorador de Imágenes\nApp web de super-resolución con IA","x":-260,"y":-760,"width":520,"height":110,"color":"5"},
+		{"id":"n-contexto","type":"file","file":"CONTEXTO.md","x":-260,"y":-480,"width":520,"height":260},
+		{"id":"n-arq","type":"file","file":"02-Tecnico/Arquitectura.md","x":-160,"y":-70,"width":420,"height":340,"color":"1"},
+		{"id":"n-dim","type":"file","file":"02-Tecnico/Logica-Dimensionado.md","x":-160,"y":360,"width":420,"height":360,"color":"1"},
+		{"id":"n-mod","type":"file","file":"02-Tecnico/Modelos-IA.md","x":-160,"y":960,"width":420,"height":340,"color":"1"},
+		{"id":"n-ui","type":"file","file":"01-Producto/Requisitos-UI.md","x":-900,"y":990,"width":400,"height":340,"color":"4"},
+		{"id":"n-ref","type":"file","file":"01-Producto/Referencia-LetsEnhance.md","x":-900,"y":530,"width":400,"height":380,"color":"4"},
+		{"id":"n-vision","type":"file","file":"01-Producto/Vision.md","x":-900,"y":100,"width":400,"height":320,"color":"4"}
+	],
+	"edges":[
+		{"id":"e1","fromNode":"n-titulo","fromSide":"bottom","toNode":"n-contexto","toSide":"top"},
+		{"id":"e2","fromNode":"n-contexto","fromSide":"left","toNode":"n-vision","toSide":"top"},
+		{"id":"e3","fromNode":"n-contexto","fromSide":"bottom","toNode":"n-arq","toSide":"top"},
+		{"id":"e4","fromNode":"n-vision","fromSide":"bottom","toNode":"n-ref","toSide":"top"},
+		{"id":"e5","fromNode":"n-ref","fromSide":"bottom","toNode":"n-ui","toSide":"top"},
+		{"id":"e6","fromNode":"n-nota","fromSide":"right","toNode":"n-ref","toSide":"left","label":"medido"},
+		{"id":"e7","fromNode":"n-ref","fromSide":"right","toNode":"n-dim","toSide":"left","label":"define"},
+		{"id":"e8","fromNode":"n-arq","fromSide":"right","toNode":"n-adr","toSide":"left","label":"se decide en"},
+		{"id":"e9","fromNode":"n-dim","fromSide":"right","toNode":"n-pipe","toSide":"left","label":"paso final"},
+		{"id":"e10","fromNode":"n-mod","fromSide":"right","toNode":"n-pipe","toSide":"left","label":"paso central"},
+		{"id":"e11","fromNode":"n-adr","fromSide":"right","toNode":"n-flujo","toSide":"left"}
+	]
+}

@@ -1,0 +1,22 @@
+# Entorno Python
+.venv/
+__pycache__/
+*.pyc
+
+# Modelos y binarios pesados: se descargan aparte, no van al repo.
+# URLs documentadas en CLAUDE.md, engine/README_windows.md y el vault.
+engine/*.exe
+engine/*.dll
+engine/models/
+engine/models_face/
+gfpgan/
+
+# Datos generados por el usuario: imágenes subidas, resultados, DB de jobs.
+backend/data/
+
+# Estado interno de Claude Code, no es parte del proyecto.
+.claude/
+
+# Config local de la app Obsidian: incluye la API key y clave privada del
+# plugin Local REST API (usado por el MCP). Nunca debe ir a un repo público.
+Vault-Obsidian/.obsidian/

@@ -1,0 +1,14 @@
+# Backend (FastAPI)
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+pillow
+
+# Restauración facial (engine/face_restore.py)
+opencv-python-headless
+gfpgan
+
+# torch no va acá: requiere el índice de PyTorch para la build con CUDA.
+# Instalar antes que el resto de este archivo:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu126
